@@ -1,6 +1,6 @@
 from tables import engine, users
 from sqlalchemy import insert
-from hasher import hash_password
+from security import hash_password
 
 
 
