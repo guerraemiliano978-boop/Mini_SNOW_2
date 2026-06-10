@@ -18,7 +18,7 @@ def verify_login(user: tuple, request: object):
 
 def get_user_data(user: tuple): 
     data = {
-        "sub": user[1],
+        "sub": user[2],
         "role": user[4]
     }
     return data

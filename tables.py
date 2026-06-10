@@ -15,6 +15,17 @@ users = Table(
     Column("role", String, nullable=False)
 )
 
+incidents = Table(
+    "incidents",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("short_description", String, nullable=False),
+    Column("description", String, nullable=False),
+    Column("opened_by", Integer, ForeignKey(users.c.id), nullable=False),
+    Column("assigned_to", Integer, ForeignKey(users.c.id)),
+    Column("status", String, CheckConstraint("status IN ('open', 'in progress', 'closed')"), nullable=False, server_default=text("'open'")),
+    Column("resolution_notes", String)
+)
 
 
 metadata.create_all(engine)
@@ -23,15 +34,3 @@ metadata.create_all(engine)
 
 
 
-#incidents = Table(
-    #"incidents",
-    #metadata,
-    #Column("id", Integer, primary_key=True),
-    #Column("short_description", String, nullable=False),
-    #Column("description", String, nullable=False),
-    #Column("opened_by", Integer, ForeignKey(users.c.id), primary_key=True),
-    #Column("opened_for", Integer, ForeignKey(users.c.id), primary_key=True),
-    #Column("assigned_to", Integer, ForeignKey),
-    #Column("status", CheckConstraint("status IN ('open', 'in progress', 'closed')"), nullable=False, server_default=text("'open'")),
-    #Column("resolution_notes", String)
-#)
