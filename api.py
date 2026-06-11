@@ -5,7 +5,7 @@ from auth_service import verify_login, get_token, get_user_by_username
 from security import verify_token
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
-from ticket_system import create_incident, get_incident_list, get_incidents_opened_by_me
+from ticket_system import create_incident, get_incident_list, get_incidents_opened_by_me, get_available_agents, get_unassigned_incidents
 from datetime import datetime
 
 
@@ -45,8 +45,16 @@ class IncidentFormat(BaseModel):
     resolution_notes: Optional[str]
     resolved_at: Optional[datetime]
 
+class AgentFormat(BaseModel):
+    username: str
+    full_name: str
+
 class IncidentListResponse(BaseModel):
     tickets: List[IncidentFormat]
+
+class IncidentUnassignedResponse(BaseModel):
+    unassigned: List[IncidentFormat]
+    available_agents: List[AgentFormat]
 
 
 
@@ -111,6 +119,18 @@ def request_incidents_list( _: dict = Depends(validate_credentials_and_role("adm
     return IncidentListResponse(
         tickets= incidents_list
     )
+
+@app.get("/incidents/get/unassigned-with-agents", response_model=IncidentUnassignedResponse)
+def unassigned_incidents_with_agents( _: dict = Depends(validate_credentials_and_role("admin"))):
+    incidents_list = get_unassigned_incidents()
+    available_agents = get_available_agents()
+    return IncidentUnassignedResponse(
+        unassigned= incidents_list,
+        available_agents= available_agents
+    )
+
+
+
 
 @app.get("/incident/get/opened_by/me", response_model=IncidentListResponse)
 def incidents_opened_by_me(current_user: dict = Depends(validate_credentials)):
