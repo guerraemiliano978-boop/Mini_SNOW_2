@@ -1,8 +1,8 @@
-from ticket_system import create_incident, get_incident_list, get_incidents_opened_by_me, get_incidents_assigned_to_me, get_available_agents, get_unassigned_incidents, assign_incident
-from models import LoginReq, LoginResp, IncidentResponse, CreateIncidentRequest, IncidentListResponse, IncidentUnassignedResponse, AssignIncidentRequest
+from ticket_system import create_incident, get_incident_list, get_incidents_opened_by_me, get_incidents_assigned_to_me, get_available_agents, get_unassigned_incidents, assign_incident, resolve_incident
+from models import LoginReq, LoginResp, IncidentResponse, CreateIncidentRequest, IncidentListResponse, IncidentUnassignedResponse, AssignIncidentRequest, CloseIncidentRequest
 from dependencies import validate_credentials, validate_credentials_and_role
 from auth_service import verify_login, get_token, get_user_by_username
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, status, HTTPException
 
 
 
@@ -39,6 +39,31 @@ def request_incident_creation(payload: CreateIncidentRequest, current_user: dict
             message= "Something, went wrong, please try again later"
         )
 
+@app.post("/incident/assign", response_model=IncidentResponse)
+def assign_incident_request(payload: AssignIncidentRequest, _: dict = Depends(validate_credentials_and_role("admin"))):
+    is_valid = assign_incident(payload)
+    if is_valid:
+        return IncidentResponse(
+            status= "success"
+        )
+    else:
+        return IncidentResponse(
+            status= "failure",
+            message= "something went wrong, please try again in a moment"
+        )
+    
+@app.post("/incident/resolve", response_model=IncidentResponse)
+def resolve_incident_request(payload: CloseIncidentRequest, current_user : dict = Depends(validate_credentials_and_role(("agent", "admin")))):
+    current_ticket = payload.incident_id
+    if resolve_incident(payload, current_user):
+        return IncidentResponse(
+            status= "success",
+            message= f"The ticket {current_ticket} has been marked as resolved!"
+        )
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail= f"You do not have permission to close {current_ticket}")
+
+
 @app.get("/incident/get/all", response_model=IncidentListResponse)
 def request_incidents_list( _: dict = Depends(validate_credentials_and_role("admin"))):
     incidents_list = get_incident_list()
@@ -61,18 +86,7 @@ def unassigned_incidents_with_agents( _: dict = Depends(validate_credentials_and
             available_agents= available_agents
         )
 
-@app.post("/incident/assign", response_model=IncidentResponse)
-def assign_incident_request(payload: AssignIncidentRequest, _: dict = Depends(validate_credentials_and_role("admin"))):
-    is_valid = assign_incident(payload)
-    if is_valid:
-        return IncidentResponse(
-            status= "success"
-        )
-    else:
-        return IncidentResponse(
-            status= "failure",
-            message= "something went wrong, please try again in a moment"
-        )
+
 
 @app.get("/incident/get/opened_by/me", response_model=IncidentListResponse)
 def incidents_opened_by_me(current_user: dict = Depends(validate_credentials)):

@@ -1,4 +1,4 @@
-from models import CreateIncidentRequest, AssignIncidentRequest
+from models import CreateIncidentRequest, AssignIncidentRequest, CloseIncidentRequest
 from sqlalchemy import select, insert, update
 from tables import users, incidents, engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -26,6 +26,15 @@ def create_incident(payload: CreateIncidentRequest, user: dict):
     except SQLAlchemyError as e:
          print(f"Database error: {e}")
          return False
+
+def can_resolve(raw_id, user):
+    with engine.connect() as conn:
+        stmt = select(incidents).where(incidents.c.id == raw_id, incidents.c.assigned_to == user["sub"])
+        result = conn.execute(stmt)
+    if result.fetchall() or user["role"] == "admin":
+        pass
+    else:
+        return False
     
 def process_incident_id(incident_id):
         result = f"INC{str(incident_id).zfill(4)}"
@@ -55,6 +64,8 @@ def process_list(incident_list):
         ticket["assigned_to"] = get_name_by_id(assigned_to_id)
         created_at = ticket["created_at"]
         ticket["created_at"] = process_dt(created_at)
+        resolved_at = ticket["resolved_at"]
+        ticket["resolved_at"] = process_dt(resolved_at)
     
     return incident_list
 
@@ -144,7 +155,27 @@ def assign_incident(payload: AssignIncidentRequest):
     except Exception as e:
         print(f"Database error: {e}")
 
-def resolve_incident(payload: object):
-    pass
+def resolve_incident(payload: CloseIncidentRequest, user: dict):
+    try:
+        raw_id = unprocress_incident_id(payload.incident_id)
+        user_id = get_id_by_username(user["sub"])
+        with engine.begin() as conn:
+            stmt = select(incidents).where(incidents.c.id == raw_id, incidents.c.assigned_to == user_id)
+            result = conn.execute(stmt)
+            if result.fetchall() or user["role"] == "admin":
+                current_time = get_time()
+                stmt = update(incidents).where(incidents.c.id == raw_id).values(
+                    status= "resolved",
+                    resolution_notes= payload.resolution_notes,
+                    resolved_at= current_time)
+                conn.execute(stmt)
+                return True
+
+            else:
+                return False
+            
+    except Exception as e:
+        print(f"Database error: {e}")
+
 
 

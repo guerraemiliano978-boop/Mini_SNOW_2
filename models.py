@@ -48,3 +48,7 @@ class IncidentUnassignedResponse(BaseModel):
 class AssignIncidentRequest(BaseModel):
     incident_id: str
     agent_username: str
+
+class CloseIncidentRequest(BaseModel):
+    incident_id: str
+    resolution_notes: str
