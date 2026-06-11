@@ -1,6 +1,7 @@
 from tables import users, engine
 from sqlalchemy import select
 from security import verify_password, create_token
+from models import LoginReq
 
 
 def get_user_by_username(request: object):
@@ -9,7 +10,7 @@ def get_user_by_username(request: object):
         result = conn.execute(stmt)
         return result.fetchone()
 
-def verify_login(user: tuple, request: object):
+def verify_login(user: tuple, request: LoginReq):
     if user is None:
         return False
 

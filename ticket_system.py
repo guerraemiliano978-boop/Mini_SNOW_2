@@ -1,3 +1,4 @@
+from models import CreateIncidentRequest, AssignIncidentRequest
 from sqlalchemy import select, insert, update
 from tables import users, incidents, engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,7 +7,7 @@ from datetime import datetime, timezone
 
 
 
-def create_incident(payload: object, user: dict):
+def create_incident(payload: CreateIncidentRequest, user: dict):
     try:
         user_id = get_id_by_username(user.get("sub"))
         created_at = get_time()
@@ -47,8 +48,10 @@ def process_list(incident_list):
         incident_id = ticket["id"]
         ticket["id"] = process_incident_id(incident_id)
         opened_by_id = ticket["opened_by"]
+        print(opened_by_id)
         ticket["opened_by"] = get_name_by_id(opened_by_id)
         assigned_to_id = ticket["assigned_to"]
+        print(assigned_to_id)
         ticket["assigned_to"] = get_name_by_id(assigned_to_id)
         created_at = ticket["created_at"]
         ticket["created_at"] = process_dt(created_at)
@@ -80,6 +83,7 @@ def get_incident_list():
             ticket = dict(row._mapping)
             incident_list.append(ticket)
 
+        print(incident_list)
         return process_list(incident_list)
      
 def get_incidents_opened_by_me(user):
@@ -93,6 +97,19 @@ def get_incidents_opened_by_me(user):
             incident_list.append(ticket)
 
         return process_list(incident_list)
+    
+def get_incidents_assigned_to_me(user):
+    with engine.connect() as conn:
+        user_id = get_id_by_username(user)
+        stmt = select(incidents).where(incidents.c.assigned_to == user_id)
+        result = conn.execute(stmt)
+        incident_list = []
+        for row in result:
+            ticket = dict(row._mapping)
+            incident_list.append(ticket)
+
+        return process_list(incident_list)
+    
     
 def get_unassigned_incidents():
     with engine.connect() as conn:
@@ -116,18 +133,18 @@ def get_available_agents():
         
         return available_agents
 
-def assign_incident(inc_id, agent):
+def assign_incident(payload: AssignIncidentRequest):
     try:
-        raw_id = unprocress_incident_id(inc_id)
+        agent_id = get_id_by_username(payload.agent_username)
+        raw_id = unprocress_incident_id(payload.incident_id)
         with engine.begin() as conn:
-            stmt = update(incidents).where(incidents.c.id == raw_id).values(assigned_to= agent)
+            stmt = update(incidents).where(incidents.c.id == raw_id).values(assigned_to= agent_id)
             conn.execute(stmt)
             return True
     except Exception as e:
         print(f"Database error: {e}")
 
+def resolve_incident(payload: object):
+    pass
 
-assign_incident("INC0001", "rockstar123")
-    
-print(get_incident_list())
-print(get_unassigned_incidents())
+
