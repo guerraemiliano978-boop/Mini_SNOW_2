@@ -9,7 +9,7 @@ class LoginReq(BaseModel):
 
 class LoginResp(BaseModel):
     answer: str
-    token: Optional[str] = None
+    token: str
 
 class CreateIncidentRequest(BaseModel):
     short_description: str
@@ -19,7 +19,6 @@ class CreateIncidentRequest(BaseModel):
 class IncidentResponse(BaseModel):
     status: str
     ticket_id: Optional[str] = None
-    message: Optional[str] = None
 
 class IncidentFormat(BaseModel):
     id: str
@@ -49,6 +48,6 @@ class AssignIncidentRequest(BaseModel):
     incident_id: str
     agent_username: str
 
-class CloseIncidentRequest(BaseModel):
+class ResolveIncidentRequest(BaseModel):
     incident_id: str
     resolution_notes: str

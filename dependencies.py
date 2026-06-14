@@ -7,9 +7,7 @@ import jwt
 bearer = HTTPBearer()
 
 
-
-
-def validate_credentials_and_role(required_roles):
+def validate_credentials_and_role(required_roles: tuple) -> dict:
     if isinstance(required_roles, str):
         required_roles = (required_roles,)
 
@@ -21,7 +19,7 @@ def validate_credentials_and_role(required_roles):
     return dependency
 
 
-def validate_credentials(credentials: HTTPAuthorizationCredentials = Depends(bearer)):
+def validate_credentials(credentials: HTTPAuthorizationCredentials = Depends(bearer)) -> dict:
     token = credentials.credentials
     try:
         user = verify_token(token)

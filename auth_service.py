@@ -1,31 +1,33 @@
+from security import verify_password, create_token
 from tables import users, engine
 from sqlalchemy import select
-from security import verify_password, create_token
 from models import LoginReq
 
 
-def get_user_by_username(request: object):
-    with engine.connect() as conn:
-        stmt = select(users).where(users.c.username == request.username)
-        result = conn.execute(stmt)
-        return result.fetchone()
 
-def verify_login(user: tuple, request: LoginReq):
+def get_data_by_username(request: LoginReq) -> dict | None:
+        with engine.connect() as conn:
+            stmt = select(users.c.username, users.c.password, users.c.role).where(users.c.username == request.username)
+            return conn.execute(stmt).mappings().fetchone()
+
+
+def verify_login(user: dict, request: LoginReq) -> bool: 
     if user is None:
         return False
 
-    hashed_password = user[3]
-    return verify_password(request.password, hashed_password)
+    return verify_password(request.password, user["password"])
 
-def get_user_data(user: tuple): 
+
+def parse_user_data(user: dict) -> dict: 
     data = {
-        "sub": user[2],
-        "role": user[4]
+        "sub": user["username"],
+        "role": user["role"]
     }
     return data
     
-def get_token(user: tuple):
-    user_data = get_user_data(user)
+    
+def get_token(user: dict) -> str:
+    user_data = parse_user_data(user)
     return create_token(user_data)
 
 
