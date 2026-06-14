@@ -141,7 +141,7 @@ def assign_incident(payload: AssignIncidentRequest) -> bool:
         print(f"Database error: {e}")
 
 
-def resolve_incident(payload: ResolveIncidentRequest, user: dict):
+def resolve_incident(payload: ResolveIncidentRequest, user: dict) -> bool:
     try:
         raw_id = unprocress_incident_id(payload.incident_id)
         with engine.begin() as conn:
