@@ -144,8 +144,8 @@ def assign_incident(payload: AssignIncidentRequest) -> bool:
 def resolve_incident(payload: ResolveIncidentRequest, user: dict):
     try:
         raw_id = unprocress_incident_id(payload.incident_id)
-        user_id = get_id_by_username(user["sub"])
         with engine.begin() as conn:
+            user_id = get_id_by_username(user["sub"], conn)
             stmt = select(incidents).where(incidents.c.id == raw_id, incidents.c.assigned_to == user_id)
             result = conn.execute(stmt)
             if result.fetchall() or user["role"] == "admin":

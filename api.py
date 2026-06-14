@@ -41,7 +41,7 @@ def assign_incident_request(payload: AssignIncidentRequest, _: dict = Depends(va
     is_valid = assign_incident(payload)
     if is_valid:
         return IncidentResponse(
-            status= "success"
+            status= f"Ticket {payload.incident_id} has assigned succesfully to {payload.agent_username}"
         )
     else:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="We couldn't assign the incident at this moment")
@@ -52,7 +52,7 @@ def resolve_incident_request(payload: ResolveIncidentRequest, current_user : dic
     current_ticket = payload.incident_id
     if resolve_incident(payload, current_user):
         return IncidentResponse(
-            status= "success",
+            status= f"The ticket {payload.incident_id} has been resolved successfuly",
             message= f"The ticket {current_ticket} has been marked as resolved!"
         )
     else:
@@ -65,6 +65,7 @@ def request_incidents_list( _: dict = Depends(validate_credentials_and_role("adm
     return IncidentListResponse(
         tickets= incidents_list
     )
+
 
 @app.get("/incident/get/unassigned-with-agents", response_model=IncidentUnassignedResponse)
 def unassigned_incidents_with_agents( _: dict = Depends(validate_credentials_and_role("admin"))):
